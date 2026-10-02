@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Estoque Magic Puffs</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap">
+<style>
+  :root{
+    --bg:#faf8fc; --surface:#ffffff; --surface-2:#f2eef8; --border:#e4dced; --text:#241f33; --text-dim:#6b6280;
+    --accent:#8b5cf6; --accent-2:#3fc9b0; --accent-ink:#ffffff;
+    --ok:#2fae7e; --ok-bg:#e3f7ee; --warn:#c9820a; --warn-bg:#fbf0dc; --crit:#e0435c; --crit-bg:#fbe3e8;
+    --shadow: 0 1px 2px rgba(36,31,51,.06), 0 6px 20px -8px rgba(36,31,51,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#18151f; --surface:#221d2e; --surface-2:#2a2438; --border:#372f47; --text:#f1ecfa; --text-dim:#a99fc0;
+      --accent:#a78bfa; --accent-2:#5eead4; --accent-ink:#18151f;
+      --ok:#4ade9a; --ok-bg:#173427; --warn:#f0b333; --warn-bg:#3a2c11; --crit:#fb7185; --crit-bg:#3a1520;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -8px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#18151f; --surface:#221d2e; --surface-2:#2a2438; --border:#372f47; --text:#f1ecfa; --text-dim:#a99fc0;
+    --accent:#a78bfa; --accent-2:#5eead4; --accent-ink:#18151f;
+    --ok:#4ade9a; --ok-bg:#173427; --warn:#f0b333; --warn-bg:#3a2c11; --crit:#fb7185; --crit-bg:#3a1520;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -8px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:'Manrope', -apple-system, sans-serif;
+    padding:0 16px; padding-block: calc(12px + env(safe-area-inset-top,0px)) calc(32px + env(safe-area-inset-bottom,0px));
+  }
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+  h1,h2,h3{font-family:'Sora', 'Manrope', sans-serif; text-wrap:balance; margin:0;}
+  .num{font-family:'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums;}
+  .wrap{max-width:720px; margin:0 auto;}
+  header.top{ position:sticky; top:0; background:var(--bg); padding-block: 10px 8px; z-index:20; display:flex; flex-direction:column; gap:10px;}
+  .brand{display:flex; align-items:baseline; justify-content:space-between; gap:8px;}
+  .brand .name{font-size:19px; font-weight:700; letter-spacing:-.01em;}
+  .brand .tag{font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.08em;}
+  .tabs{ display:flex; gap:4px; background:var(--surface-2); border-radius:12px; padding:4px;}
+  .tabs button{ flex:1; border:0; background:transparent; color:var(--text-dim); font:inherit; font-weight:700; font-size:13.5px; padding:9px 8px; border-radius:9px; cursor:pointer; transition:.15s;}
+  .tabs button.active{ background:var(--surface); color:var(--accent); box-shadow:var(--shadow);}
+  .controls{ display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+  .segmented{ display:flex; background:var(--surface-2); border-radius:10px; padding:3px; gap:2px;}
+  .segmented button{ border:0; background:transparent; color:var(--text-dim); font:inherit; font-weight:700; font-size:13px; padding:7px 12px; border-radius:8px; cursor:pointer;}
+  .segmented button.active{ background:var(--accent); color:var(--accent-ink);}
+  input[type=text].autor{ flex:1; min-width:140px; background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:8px 12px; font:inherit; font-size:13.5px;}
+  input.search{ width:100%; background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:9px 12px; font:inherit; font-size:14px; margin-top:2px;}
+  input.search::placeholder{color:var(--text-dim);}
+  .brand-group{ margin-top:18px;}
+  .brand-group summary{ list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:10px 2px; font-family:'Sora',sans-serif; font-weight:700; font-size:14.5px; border-bottom:1px solid var(--border);}
+  .brand-group summary::-webkit-details-marker{display:none;}
+  .brand-group summary .chev{ color:var(--text-dim); transition:transform .15s; font-size:12px;}
+  .brand-group[open] summary .chev{ transform:rotate(90deg);}
+  .brand-group summary .count{ color:var(--text-dim); font-weight:600; font-size:12px;}
+  .prod-row{ display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--border);}
+  .prod-row .info{ flex:1; min-width:0;}
+  .prod-row .sabor{ font-size:14px; font-weight:600; overflow-wrap:anywhere;}
+  .prod-row .meta{ font-size:11.5px; color:var(--text-dim); margin-top:1px;}
+  .stepper{ display:flex; align-items:center; gap:0; background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden;}
+  .stepper button{ border:0; background:var(--surface-2); color:var(--text); width:30px; height:30px; font-size:16px; font-weight:700; cursor:pointer;}
+  .stepper input{ width:42px; text-align:center; border:0; background:transparent; color:var(--text); font:inherit; font-weight:700; font-size:14.5px; padding:0;}
+  .diff-chip{ font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:20px; margin-left:2px; white-space:nowrap;}
+  .diff-up{ background:var(--ok-bg); color:var(--ok);}
+  .diff-down{ background:var(--crit-bg); color:var(--crit);}
+  .savebar{ position:sticky; bottom:0; margin-top:18px; padding:12px 0 4px; background:linear-gradient(to top, var(--bg) 60%, transparent);}
+  .savebar-inner{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:10px 14px; box-shadow:var(--shadow);}
+  .savebar .status{ font-size:12.5px; color:var(--text-dim);}
+  button.primary{ background:var(--accent); color:var(--accent-ink); border:0; font:inherit; font-weight:800; font-size:13.5px; padding:10px 18px; border-radius:10px; cursor:pointer;}
+  button.primary:disabled{ opacity:.45; cursor:default;}
+  button.ghost{ background:transparent; border:1px solid var(--border); color:var(--text); font:inherit; font-weight:700; font-size:12.5px; padding:7px 12px; border-radius:9px; cursor:pointer;}
+  .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--text); color:var(--bg); padding:10px 16px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:var(--shadow); z-index:50; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;}
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(-4px);}
+  .stat-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:14px;}
+  .stat{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; box-shadow:var(--shadow);}
+  .stat .label{ font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; font-weight:700;}
+  .stat .value{ font-family:'Sora',sans-serif; font-size:26px; font-weight:800; margin-top:4px;}
+  .stat .value.crit{ color:var(--crit);}
+  .stat .sub{ font-size:11.5px; color:var(--text-dim); margin-top:2px;}
+  .panel-section{ margin-top:22px;}
+  .panel-section h2{ font-size:15px; margin-bottom:8px;}
+  .empty-note{ font-size:13px; color:var(--text-dim); padding:14px 0;}
+  .alert-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid var(--border);}
+  .alert-row .who{ font-size:13.5px; font-weight:600;}
+  .alert-row .brand-lbl{ font-size:11.5px; color:var(--text-dim);}
+  .pill{ font-size:12px; font-weight:800; padding:3px 9px; border-radius:20px;}
+  .pill.crit{ background:var(--crit-bg); color:var(--crit);}
+  .pill.warn{ background:var(--warn-bg); color:var(--warn);}
+  table.breakdown{ width:100%; border-collapse:collapse; font-size:13px;}
+  table.breakdown th{ text-align:left; color:var(--text-dim); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.05em; padding:6px 4px; border-bottom:1px solid var(--border);}
+  table.breakdown td{ padding:8px 4px; border-bottom:1px solid var(--border);}
+  table.breakdown td.num, table.breakdown th.num{ text-align:right;}
+  .breakdown-wrap{ overflow-x:auto;}
+  .log-item{ padding:10px 0; border-bottom:1px solid var(--border);}
+  .log-item .top{ display:flex; justify-content:space-between; font-size:13px; font-weight:700;}
+  .log-item .top .when{ font-weight:600; color:var(--text-dim); font-size:11.5px;}
+  .log-item .changes{ font-size:12px; color:var(--text-dim); margin-top:3px;}
+  .settings-row{ display:flex; align-items:center; gap:10px; margin-top:10px;}
+  .settings-row input[type=number]{ width:70px; background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:9px; padding:7px 10px; font:inherit; font-size:14px;}
+  .conn-warn{ background:var(--warn-bg); color:var(--warn); border-radius:10px; padding:10px 12px; font-size:12.5px; margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div>
+        <div class="name">Estoque · Magic Puffs</div>
+        <div class="tag" id="subline">carregando…</div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button id="tab-contagem" class="active">Contagem</button>
+      <button id="tab-painel">Painel</button>
+    </div>
+  </header>
+
+  <section id="view-contagem">
+    <div class="controls">
+      <div class="segmented" id="periodo-toggle">
+        <button data-p="manha" class="active">☀ Manhã</button>
+        <button data-p="noite">🌙 Noite</button>
+      </div>
+      <input type="text" class="autor" id="autor-input" placeholder="Quem está contando (ex: Léo)">
+    </div>
+    <input type="text" class="search" id="search-input" placeholder="Buscar sabor ou marca…">
+    <div id="conn-warn-slot"></div>
+    <div id="brand-groups"></div>
+    <div class="savebar">
+      <div class="savebar-inner">
+        <div class="status" id="save-status">Nenhuma alteração ainda</div>
+        <button class="primary" id="save-btn" disabled>Salvar contagem</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-painel" hidden>
+    <div class="stat-grid" id="stat-grid"></div>
+
+    <div class="panel-section">
+      <h2>Estoque mínimo de alerta</h2>
+      <div class="settings-row">
+        <input type="number" id="min-input" min="0" step="1">
+        <button class="ghost" id="min-save">Salvar limite</button>
+        <span class="tag" id="min-status" style="font-size:11.5px;"></span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h2>Produtos em alerta</h2>
+      <div id="alerts-list"><div class="empty-note">Carregando…</div></div>
+    </div>
+
+    <div class="panel-section">
+      <h2>Por marca</h2>
+      <div class="breakdown-wrap">
+        <table class="breakdown">
+          <thead><tr><th>Marca</th><th class="num">Unidades</th><th class="num">Em alerta</th></tr></thead>
+          <tbody id="breakdown-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h2>Últimas contagens</h2>
+      <div id="log-list"><div class="empty-note">Carregando…</div></div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var SUPABASE_URL = "https://nsdhcrpjwgqfrtyiljqiq.supabase.co";
+  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zZGhjcnBqd2dxZnJ0eWlqcWlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5NDg4OTEsImV4cCI6MjEwNjUyNDg5MX0.9l3jaWPv_2K1cNFRK-igQnQBpSnFnBwdUXMXVZVGJO4";
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var CATALOGO = [
+["Black Sheep Duo 30K","Grape + Grape"],["Black Sheep Duo 30K","Grape + Strawberry Kiwi"],
+["Black Sheep Duo 30K","Strawberry Bubble + Sour Pineapple"],["Black Sheep Duo 30K","Grape + Passion Fruit"],
+["Black Sheep Duo 30K","Fresh Mint + Watermelon Strawberry"],["Black Sheep Duo 30K","Strawberry Banana + Pineapple Coconut"],
+["Black Sheep Duo 30K","Sour Green Apple + Grape Blueberry"],
+["Black Sheep Duo 40K","Strawberry Kiwi + Cola Lime"],["Black Sheep Duo 40K","Grape + Menthol"],
+["Black Sheep Duo 40K","Grape + Grape Mango"],["Black Sheep Duo 40K","Grape Blueberry + Cherry Berry"],
+["Ignite V500","Blueberry Ice"],["Ignite V500","Watermelon Kiwi"],["Ignite V500","Banana Cherry"],
+["Ignite V500","Icy Mint"],["Ignite V500","Grape Ice"],
+["Ignite V300","Menthol"],["Ignite V300","Strawberry Ice"],["Ignite V300","Watermelon Ice"],["Ignite V300","Pineapple Ice"],
+["ElfBar BC 15K","Blue Razz Ice"],["ElfBar BC 15K","Strawberry Watermelon"],["ElfBar BC 15K","Watermelon Ice"],
+["ElfBar BC 15K","Kiwi Passion Fruit Guava"],["ElfBar BC 15K","Icy Mint"],["ElfBar BC 15K","Strawberry Ice"],
+["ElfBar TE 30K","Pineapple Ice"],["ElfBar TE 30K","Bubbaloo Tutti Frutti"],["ElfBar TE 30K","Strawberry Ice"],
+["ElfBar TE 30K","Bubbaloo Grape"],["ElfBar TE 30K","Miami Mint"],
+["ElfBar Ice King 40K","Miami Mint"],["ElfBar Ice King 40K","Strawberry Watermelon"],["ElfBar Ice King 40K","Bubbaloo Tutti Frutti"],
+["ElfBar Ice King 40K","Peach"],["ElfBar Ice King 40K","Hawaiian Slush"],["ElfBar Ice King 40K","Grape Ice"],
+["Dinner Lady Duo 50K","Mango Passion Ice + Pineapple Ice"],["Dinner Lady Duo 50K","Grape Ice + Mint Ice"],
+["Dinner Lady Duo 50K","Banana Ice + Peach Mango Watermelon"],["Dinner Lady Duo 50K","Kiwi Passion Fruit + Apple Peach"],
+["Dinner Lady Duo 50K","Grape Ice + Mexico Mango"],
+["Ignite V55 Slim","Menthol"],["Ignite V55 Slim","Grape Ice"],["Ignite V55 Slim","Strawberry Kiwi"],
+["Ignite V55 Slim","Icy Mint"],["Ignite V55 Slim","Watermelon Ice"],
+["Ignite V155 Slim","Pineapple Ice"],["Ignite V155 Slim","Icy Mint"],["Ignite V155 Slim","Watermelon Ice"],
+["Ignite V155 Slim","Strawberry Watermelon"],["Ignite V155 Slim","Grape Ice"],
+["Ignite V80","Grapefruit Mint"],["Ignite V80","Menthol"],["Ignite V80","Passion Fruit Sour Kiwi"],["Ignite V80","Icy Mint"]
+  ];
+
+  function slugify(s){
+    return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+  }
+  function pid(marca,sabor){ return slugify(marca)+"__"+slugify(sabor); }
+
+  var state = { produtos:new Map(), pending:new Map(), minimo:2, logs:[], connReady:false };
+
+  function start(){
+    wireTabs();
+    wireContagemControls();
+    renderProductList();
+    initDb();
+  }
+  start();
+
+  async function initDb(){
+    document.getElementById("subline").textContent = "Conectando…";
+    try{
+      var r1 = await sb.from("produtos").select("*");
+      if(r1.error) throw r1.error;
+      r1.data.forEach(function(row){
+        state.produtos.set(row.id, {
+          id: row.id, marca: row.marca, sabor: row.sabor, estoque: row.estoque,
+          atualizadoEm: row.atualizado_em, atualizadoPor: row.atualizado_por
+        });
+      });
+      var r2 = await sb.from("settings").select("*").eq("id","config").maybeSingle();
+      if(r2.data && typeof r2.data.estoque_minimo === "number") state.minimo = r2.data.estoque_minimo;
+      var r3 = await sb.from("registros").select("*").order("timestamp",{ascending:false}).limit(10);
+      if(r3.data) state.logs = r3.data;
+
+      state.connReady = true;
+      document.getElementById("subline").textContent = "Conectado — sincronizado em tempo real";
+      renderProductList(); renderPainel();
+
+      sb.channel("produtos-changes").on("postgres_changes", {event:"*", schema:"public", table:"produtos"}, function(payload){
+        if(payload.eventType === "DELETE"){ state.produtos.delete(payload.old.id); }
+        else{
+          var row = payload.new;
+          state.produtos.set(row.id, { id: row.id, marca: row.marca, sabor: row.sabor, estoque: row.estoque, atualizadoEm: row.atualizado_em, atualizadoPor: row.atualizado_por });
+        }
+        renderProductList(); renderPainel();
+      }).subscribe();
+
+      sb.channel("settings-changes").on("postgres_changes", {event:"*", schema:"public", table:"settings", filter:"id=eq.config"}, function(payload){
+        if(payload.new && typeof payload.new.estoque_minimo === "number"){
+          state.minimo = payload.new.estoque_minimo;
+          var minInput = document.getElementById("min-input");
+          if(document.activeElement !== minInput) renderPainel();
+        }
+      }).subscribe();
+
+      sb.channel("registros-changes").on("postgres_changes", {event:"INSERT", schema:"public", table:"registros"}, function(payload){
+        state.logs.unshift(payload.new);
+        state.logs = state.logs.slice(0,10);
+        renderLogs();
+      }).subscribe();
+
+    }catch(e){
+      console.error("init error", e);
+      document.getElementById("subline").textContent = "Sem conexão com o banco";
+      document.getElementById("conn-warn-slot").innerHTML =
+        '<div class="conn-warn">Não foi possível conectar ao estoque compartilhado agora. Os dados podem estar desatualizados. Verifique sua internet e recarregue a página.</div>';
+    }
+  }
+
+  function wireTabs(){
+    var tc=document.getElementById("tab-contagem"), tp=document.getElementById("tab-painel");
+    var vc=document.getElementById("view-contagem"), vp=document.getElementById("view-painel");
+    function show(which){
+      tc.classList.toggle("active", which==="contagem");
+      tp.classList.toggle("active", which==="painel");
+      vc.hidden = which!=="contagem"; vp.hidden = which!=="painel";
+      try{ localStorage.setItem("mp_tab", which); }catch(e){}
+      if(which==="painel") renderPainel();
+    }
+    tc.addEventListener("click", function(){ show("contagem"); });
+    tp.addEventListener("click", function(){ show("painel"); });
+    var saved="contagem"; try{ saved=localStorage.getItem("mp_tab")||"contagem"; }catch(e){}
+    show(saved);
+  }
+
+  var periodo = "manha";
+  function wireContagemControls(){
+    var toggle = document.getElementById("periodo-toggle");
+    toggle.addEventListener("click", function(e){
+      var btn=e.target.closest("button"); if(!btn) return;
+      periodo = btn.dataset.p;
+      Array.from(toggle.children).forEach(function(b){ b.classList.toggle("active", b===btn); });
+    });
+    var autorInput = document.getElementById("autor-input");
+    try{ autorInput.value = localStorage.getItem("mp_autor") || ""; }catch(e){}
+    autorInput.addEventListener("input", function(){ try{ localStorage.setItem("mp_autor", autorInput.value); }catch(e){} });
+    document.getElementById("search-input").addEventListener("input", function(){ renderProductList(); });
+    document.getElementById("save-btn").addEventListener("click", saveContagem);
+  }
+
+  function groupedCatalog(){
+    var byBrand = new Map();
+    CATALOGO.forEach(function(pair){
+      var marca=pair[0], sabor=pair[1], id=pid(marca,sabor);
+      if(!byBrand.has(marca)) byBrand.set(marca, []);
+      byBrand.get(marca).push({id:id, marca:marca, sabor:sabor});
+    });
+    return byBrand;
+  }
+  function currentValue(id){
+    if(state.pending.has(id)) return state.pending.get(id);
+    var p = state.produtos.get(id);
+    return p ? p.estoque : null;
+  }
+  function renderProductList(){
+    var container = document.getElementById("brand-groups");
+    var query = (document.getElementById("search-input").value || "").toLowerCase().trim();
+    var byBrand = groupedCatalog();
+    var html = "";
+    byBrand.forEach(function(items, marca){
+      var filtered = query ? items.filter(function(it){ return it.marca.toLowerCase().indexOf(query)>-1 || it.sabor.toLowerCase().indexOf(query)>-1; }) : items;
+      if(filtered.length===0) return;
+      html += '<details class="brand-group" open>';
+      html += '<summary><span>'+escapeHtml(marca)+'</span><span class="count">'+filtered.length+' sabores <span class="chev">▶</span></span></summary>';
+      filtered.forEach(function(it){
+        var val = currentValue(it.id);
+        var saved = state.produtos.get(it.id);
+        var displayVal = val===null ? 0 : val;
+        var diffHtml = "";
+        if(saved && state.pending.has(it.id) && state.pending.get(it.id) !== saved.estoque){
+          var d = state.pending.get(it.id) - saved.estoque;
+          diffHtml = '<span class="diff-chip '+(d>0?'diff-up':'diff-down')+'">'+(d>0?'+':'')+d+'</span>';
+        }
+        html += '<div class="prod-row" data-id="'+it.id+'">';
+        html += '<div class="info"><div class="sabor">'+escapeHtml(it.sabor)+'</div>';
+        html += '<div class="meta">'+(saved ? ('último: '+saved.estoque+' un.') : 'novo produto')+'</div></div>';
+        html += '<div class="stepper"><button type="button" class="dec">–</button><input type="number" min="0" inputmode="numeric" class="qty" value="'+displayVal+'"><button type="button" class="inc">+</button></div>';
+        html += diffHtml + '</div>';
+      });
+      html += '</details>';
+    });
+    if(!html) html = '<div class="empty-note">Nenhum produto encontrado.</div>';
+    container.innerHTML = html;
+    container.querySelectorAll(".prod-row").forEach(function(row){
+      var id = row.dataset.id; var input = row.querySelector(".qty");
+      row.querySelector(".dec").addEventListener("click", function(){ setPending(id, Math.max(0,(parseInt(input.value,10)||0)-1)); });
+      row.querySelector(".inc").addEventListener("click", function(){ setPending(id, (parseInt(input.value,10)||0)+1); });
+      input.addEventListener("change", function(){ setPending(id, Math.max(0, parseInt(input.value,10)||0)); });
+    });
+    updateSaveBar();
+  }
+  function setPending(id, val){
+    var saved = state.produtos.get(id);
+    if(saved && saved.estoque === val) state.pending.delete(id); else state.pending.set(id, val);
+    renderProductList();
+  }
+  function updateSaveBar(){
+    var n = state.pending.size;
+    document.getElementById("save-status").textContent = n===0 ? "Nenhuma alteração ainda" : (n===1 ? "1 produto alterado" : n+" produtos alterados");
+    document.getElementById("save-btn").disabled = n===0 || !state.connReady;
+  }
+
+  async function saveContagem(){
+    if(state.pending.size===0) return;
+    var btn = document.getElementById("save-btn");
+    btn.disabled = true; btn.textContent = "Salvando…";
+    var autor = (document.getElementById("autor-input").value || "").trim() || "—";
+    var now = new Date();
+    var alteracoes = [];
+    var upserts = [];
+    state.pending.forEach(function(novoValor, id){
+      var catalogItem = CATALOGO.find(function(pair){ return pid(pair[0],pair[1])===id; });
+      var marca = catalogItem ? catalogItem[0] : (state.produtos.get(id)||{}).marca || "";
+      var sabor = catalogItem ? catalogItem[1] : (state.produtos.get(id)||{}).sabor || "";
+      var anterior = state.produtos.has(id) ? state.produtos.get(id).estoque : null;
+      alteracoes.push({produtoId:id, marca:marca, sabor:sabor, de:anterior, para:novoValor});
+      upserts.push({ id:id, marca:marca, sabor:sabor, estoque:novoValor, atualizado_em: now.toISOString(), atualizado_por: autor });
+    });
+    try{
+      var r1 = await sb.from("produtos").upsert(upserts);
+      if(r1.error) throw r1.error;
+      var r2 = await sb.from("registros").insert({ data: now.toISOString().slice(0,10), periodo: periodo, autor: autor, alteracoes: alteracoes });
+      if(r2.error) throw r2.error;
+      upserts.forEach(function(u){ state.produtos.set(u.id, {id:u.id, marca:u.marca, sabor:u.sabor, estoque:u.estoque, atualizadoEm:u.atualizado_em, atualizadoPor:u.atualizado_por}); });
+      state.pending.clear();
+      showToast("Contagem salva ✓");
+      renderProductList(); renderPainel();
+    }catch(e){
+      console.error("save error", e);
+      showToast("Não deu para salvar. Verifique a internet e tente de novo.");
+    }finally{
+      btn.textContent = "Salvar contagem"; updateSaveBar();
+    }
+  }
+  function showToast(msg){
+    var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
+    setTimeout(function(){ t.classList.remove("show"); }, 2400);
+  }
+
+  var painelWired = false;
+  function wirePainelOnce(){
+    document.getElementById("min-save").addEventListener("click", async function(){
+      var v = Math.max(0, parseInt(document.getElementById("min-input").value,10) || 0);
+      var statusEl = document.getElementById("min-status");
+      try{
+        var r = await sb.from("settings").update({estoque_minimo:v}).eq("id","config");
+        if(r.error) throw r.error;
+        state.minimo = v;
+        statusEl.textContent = "salvo ✓"; setTimeout(function(){ statusEl.textContent=""; }, 2000);
+        renderPainel();
+      }catch(e){ statusEl.textContent = "erro ao salvar"; }
+    });
+  }
+  function renderPainel(){
+    if(!painelWired){ wirePainelOnce(); painelWired = true; }
+    document.getElementById("min-input").value = state.minimo;
+    var produtos = Array.from(state.produtos.values());
+    var totalSkus = produtos.length;
+    var totalUnidades = produtos.reduce(function(a,p){ return a+(p.estoque||0); },0);
+    var emAlerta = produtos.filter(function(p){ return (p.estoque||0) <= state.minimo; });
+    var lastUpdate = produtos.reduce(function(latest,p){ if(!p.atualizadoEm) return latest; return (!latest || p.atualizadoEm > latest.atualizadoEm) ? p : latest; }, null);
+
+    var statHtml = "";
+    statHtml += stat("Sabores cadastrados", totalSkus, totalSkus===0 ? "aguardando 1ª contagem" : "");
+    statHtml += stat("Unidades em estoque", totalUnidades, "");
+    statHtml += stat("Em alerta", emAlerta.length, "estoque ≤ "+state.minimo, emAlerta.length>0);
+    statHtml += stat("Última contagem", lastUpdate ? formatWhen(lastUpdate.atualizadoEm) : "—", lastUpdate ? "por "+lastUpdate.atualizadoPor : "");
+    document.getElementById("stat-grid").innerHTML = statHtml;
+
+    var alertsEl = document.getElementById("alerts-list");
+    if(totalSkus===0){ alertsEl.innerHTML = '<div class="empty-note">Ainda não há contagens salvas. Peça para o responsável abrir a aba "Contagem" e salvar o primeiro registro.</div>'; }
+    else if(emAlerta.length===0){ alertsEl.innerHTML = '<div class="empty-note">Nenhum produto abaixo do estoque mínimo. ✓</div>'; }
+    else{
+      emAlerta.sort(function(a,b){ return (a.estoque||0)-(b.estoque||0); });
+      alertsEl.innerHTML = emAlerta.map(function(p){
+        var pillClass=(p.estoque||0)===0?"crit":"warn";
+        var pillLabel=(p.estoque||0)===0?"esgotado":(p.estoque+" un.");
+        return '<div class="alert-row"><div><div class="who">'+escapeHtml(p.sabor)+'</div><div class="brand-lbl">'+escapeHtml(p.marca)+'</div></div><span class="pill '+pillClass+'">'+pillLabel+'</span></div>';
+      }).join("");
+    }
+
+    var byBrand = new Map();
+    produtos.forEach(function(p){
+      if(!byBrand.has(p.marca)) byBrand.set(p.marca, {unidades:0, alerta:0});
+      var b = byBrand.get(p.marca); b.unidades += (p.estoque||0);
+      if((p.estoque||0) <= state.minimo) b.alerta += 1;
+    });
+    var rows = Array.from(byBrand.entries()).sort(function(a,b){ return b[1].unidades - a[1].unidades; });
+    document.getElementById("breakdown-body").innerHTML = rows.length ? rows.map(function(entry){
+      var marca=entry[0], d=entry[1];
+      return '<tr><td>'+escapeHtml(marca)+'</td><td class="num num">'+d.unidades+'</td><td class="num num">'+(d.alerta||"–")+'</td></tr>';
+    }).join("") : '<tr><td colspan="3" style="color:var(--text-dim); padding:10px 4px;">Sem dados ainda.</td></tr>';
+
+    renderLogs();
+  }
+  function stat(label, value, sub, crit){
+    return '<div class="stat"><div class="label">'+escapeHtml(label)+'</div><div class="value num'+(crit?' crit':'')+'">'+escapeHtml(String(value))+'</div>'+(sub?'<div class="sub">'+escapeHtml(sub)+'</div>':'')+'</div>';
+  }
+  function renderLogs(){
+    var el = document.getElementById("log-list");
+    if(!state.logs || state.logs.length===0){ el.innerHTML = '<div class="empty-note">Nenhuma contagem registrada ainda.</div>'; return; }
+    el.innerHTML = state.logs.map(function(r){
+      var periodoLabel = r.periodo==="noite" ? "🌙 Noite" : "☀ Manhã";
+      var n = (r.alteracoes||[]).length;
+      return '<div class="log-item"><div class="top"><span>'+periodoLabel+' · '+escapeHtml(r.autor||"—")+'</span><span class="when">'+formatWhen(r.timestamp)+'</span></div>'+
+        '<div class="changes">'+n+' produto'+(n===1?"":"s")+' atualizado'+(n===1?"":"s")+'</div></div>';
+    }).join("");
+  }
+  function formatWhen(iso){
+    if(!iso) return "—";
+    try{ var d=new Date(iso); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+    catch(e){ return iso; }
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+})();
+</script>
+</body>
+</html>
